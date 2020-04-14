@@ -10,10 +10,35 @@
     <PackageReference Include="Discord.NEt.Commands" Version="2.1.1" />
     <PackageReference Include="Discord.NEt.websocket" Version="2.1.1" />
     <PackageReference Include="microsoft.extensions.dependencyinjection" Version="3.1.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="RabbitMQ.Client" Version="5.1.2" />
+    <PackageReference Include="SSH.NET" Version="2016.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Modules\" />
+    <ProjectReference Include="..\QuickType\QuickType.csproj" />
+    <ProjectReference Include="..\Ratelimited.GameSession.Services\Ratelimited.GameSession.Services.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="ed25519.pub">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="id_rsa">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="id_rsa.pub">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="private.key">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="private.pem">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="public.key">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

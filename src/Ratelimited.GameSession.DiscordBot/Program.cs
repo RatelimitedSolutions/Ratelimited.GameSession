@@ -6,6 +6,7 @@ using Discord;
 using Discord.WebSocket;
 using Discord.Commands;
 using Ratelimited.GameSession.DiscordBot.Services;
+using Ratelimited.GameSession.Services;
 
 namespace Ratelimited.GameSession.DiscordBot
 {
@@ -19,6 +20,7 @@ namespace Ratelimited.GameSession.DiscordBot
         {
             using (var services = ConfigureServices())
             {
+                // Discord Bot  Init
                 var client = services.GetRequiredService<DiscordSocketClient>();
 
                 client.Log += LogAsync;
@@ -49,7 +51,8 @@ namespace Ratelimited.GameSession.DiscordBot
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<HttpClient>()
-                .AddSingleton<PictureService>()
+                .AddSingleton<HostingService>(provider => new HostingService(Environment.GetEnvironmentVariable("API")))
+                .AddSingleton<MessageService>(provider => new MessageService(Environment.GetEnvironmentVariable("RABBIT")))
                 .BuildServiceProvider();
         }
 

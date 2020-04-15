@@ -1,14 +1,14 @@
-﻿using System;
+﻿using QuickType;
+using Renci.SshNet;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
-using QuickType;
-using Renci.SshNet;
-using Ratelimited.GameSession.Services;
-using SshNet;
+
 namespace Ratelimited.GameSession.Services
 {
     public class HostingService
@@ -23,7 +23,7 @@ namespace Ratelimited.GameSession.Services
 
         public Server CreateServer(ulong guildId)
         {
-            var newServer = new Server(guildId,ApiKey);
+            var newServer = new Server(guildId, ApiKey);
             Servers.Add(newServer);
             return newServer;
         }
@@ -36,7 +36,7 @@ namespace Ratelimited.GameSession.Services
         private long ServerId { get; set; }
         private HttpClient httpClient;
 
-        public Server(ulong guildId,string apiKey)
+        public Server(ulong guildId, string apiKey)
         {
             GuildId = guildId;
 
@@ -48,9 +48,6 @@ namespace Ratelimited.GameSession.Services
             var dropletResponse = await CreateDropletAsync(guildId);
             ServerId = dropletResponse.Droplet.Id;
 
-            //var result = await GetDroplet(188591775);
-            //ServerId = result.Droplet.Id;
-
             await WaitForSetupAsync();
 
             await InstallSessionOnServerAsync();
@@ -59,7 +56,7 @@ namespace Ratelimited.GameSession.Services
 
         public ConnectionInfo CreateConnectionInfo()
         {
-            
+
             const string privateKeyFilePath = @"C:\Users\hoffm\Downloads\google_compute_engine";
             ConnectionInfo connectionInfo;
             using (var stream = new FileStream(privateKeyFilePath, FileMode.Open, FileAccess.Read))
@@ -80,7 +77,6 @@ namespace Ratelimited.GameSession.Services
         private async Task InstallSessionOnServerAsync()
         {
             var connectionInfo = CreateConnectionInfo();
-            var result = "";
             List<string> cmds = new List<string>
             {
                 "uptime",
@@ -94,25 +90,70 @@ namespace Ratelimited.GameSession.Services
                 "cd",
                 "./mcserver ai",
                 "./mcserver start",
-                "sed -i '36s/.*/server-ip={Adress}/' /home/mcserver/serverfiles/server.properties",
+                $"sed -i '36s/.*/server-ip={Adress}/' /home/mcserver/serverfiles/server.properties",
+                 "cp lgsm/config-lgsm/mcserver/_default.cfg lgsm/config-lgsm/mcserver/common.cfg",
                 "./mcserver start"
             };
+            using var client = new SshClient(connectionInfo);
+            client.Connect();
 
-            using (var client = new SshClient(connectionInfo))
+            ShellStream shellStream = client.CreateShellStream("xterm", 80, 24, 800, 600, 1024);
+            foreach (string command in cmds)
             {
-                client.Connect();
-
-                foreach (var cmd in cmds)
+                if (command == "su - mcserver")
                 {
-                    var command = client.CreateCommand(cmd);
-                    var execution =  command.BeginExecute();
-                    result = command.EndExecute(execution);
-                    Console.Out.WriteLine(result);
-                }
+                    SwithToUser("mcserver", shellStream);
 
-                client.Disconnect();
+                }
+                else
+                {
+                    WriteStream(command, shellStream);
+                    string answer = ReadStream(shellStream);
+                    int index = answer.IndexOf(System.Environment.NewLine);
+                    answer = answer.Substring(index + System.Environment.NewLine.Length);
+                    Console.WriteLine("Command output: " + answer.Trim());
+                }
             }
-             
+
+            client.Disconnect();
+
+        }
+        private static void WriteStream(string cmd, ShellStream stream)
+        {
+            stream.WriteLine(cmd + "; echo this-is-the-end");
+            while (stream.Length == 0)
+                Thread.Sleep(500);
+        }
+
+        private static void SwithToUser(string user, ShellStream stream)
+        {
+            // Get logged in and get user prompt
+            string prompt = stream.Expect(new Regex(@""));
+            Console.WriteLine(prompt);
+
+            // Send command and expect password or user prompt
+            stream.WriteLine("su - " + user);
+            prompt = stream.Expect(new Regex(@""));
+            Console.WriteLine(prompt);
+
+            // Check to send password
+            if (prompt.Contains(":"))
+            {
+                // Send password
+                stream.WriteLine("");
+                prompt = stream.Expect(new Regex(@"[$#>]"));
+                Console.WriteLine(prompt);
+            }
+        }
+        private static string ReadStream(ShellStream stream)
+        {
+            StringBuilder result = new StringBuilder();
+
+            string line;
+            while ((line = stream.ReadLine()) != "this-is-the-end")
+                result.AppendLine(line);
+
+            return result.ToString();
         }
 
         private async Task WaitForSetupAsync()
@@ -121,7 +162,7 @@ namespace Ratelimited.GameSession.Services
             var updatedDroplet = await GetDroplet(ServerId);
             while (updatedDroplet.Droplet.Networks.V4.Count == 0)
             {
-                await Task.Delay(6000);
+                await Task.Delay(3000);
                 updatedDroplet = await GetDroplet(ServerId);
             }
             Adress = updatedDroplet.Droplet.Networks.V4[0].IpAddress;
@@ -154,9 +195,9 @@ namespace Ratelimited.GameSession.Services
                 Backups = false,
                 Ipv6 = false,
                 UserData = null,
-                PrivateNetworking= null,
+                PrivateNetworking = null,
                 Volumes = null,
-                Tags = new List<string> { "session"}
+                Tags = new List<string> { "session" }
             };
             var httpContent = new StringContent(QuickType.Serialize.ToJson(content), Encoding.UTF8, "application/json");
             //httpContent.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");

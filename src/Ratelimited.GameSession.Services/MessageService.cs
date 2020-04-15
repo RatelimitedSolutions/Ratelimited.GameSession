@@ -16,7 +16,7 @@ namespace Ratelimited.GameSession.Services
             _connection = factory.CreateConnection();
         }
 
-        public (IModel, EventingBasicConsumer) ConsumNewInstanceRequests()
+        public (IModel, RabbitMQ.Client.Events.EventingBasicConsumer) ConsumNewInstanceRequests()
         {
             var channel = CreateChannelModel("NewInstance");
             var consumer = CreateChannelConsumer(channel, "NewInstance");
@@ -52,7 +52,7 @@ namespace Ratelimited.GameSession.Services
         }
 
 
-        internal EventingBasicConsumer CreateChannelConsumer(IModel channel, string queue)
+        internal RabbitMQ.Client.Events.EventingBasicConsumer CreateChannelConsumer(IModel channel, string queue)
         {
             channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
@@ -83,7 +83,7 @@ namespace Ratelimited.GameSession.Services
     public interface IMessageBroker
     {
         void CreateNewInstance(CreateNewInstanceRequest createNewInstanceRequest);
-        (IModel, EventingBasicConsumer) ConsumNewInstanceRequests();
+        (IModel, RabbitMQ.Client.Events.EventingBasicConsumer) ConsumNewInstanceRequests();
     }
 
     public class CreateNewInstanceRequest

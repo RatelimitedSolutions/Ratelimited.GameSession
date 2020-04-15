@@ -3,7 +3,6 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using RabbitMQ.Client.Events;
 using Ratelimited.GameSession.Services;
 using System;
 using System.Collections.Generic;
@@ -21,7 +20,9 @@ namespace Ratelimited.GameSession.MessageBroker
         private readonly HostingService _hostingService;
 
         public CreateNewInstanceRequest Request { get; private set; }
-        public bool IsDiscordReady = false;
+        public Tuple<RabbitMQ.Client.IModel, RabbitMQ.Client.Events.BasicDeliverEventArgs> MessageServiceTulpe;
+        public bool IsDiscordDone = false;
+        public string resultMessage = "";
 
         public Worker(ILogger<Worker> logger, DiscordSocketClient discord, MessageService messageService, HostingService hostingService)
         {
@@ -35,36 +36,28 @@ namespace Ratelimited.GameSession.MessageBroker
         {
             _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
 
-            _discordClient.Log += LogAsync;
-            _discordClient.Ready += SetReady;
-            await _discordClient.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TOKEN"));
-            await _discordClient.StartAsync();
-
             while (!stoppingToken.IsCancellationRequested)
             {
-                if (IsDiscordReady == false)
-                    continue;
-
                 var (channel, consumer) = _messageService.ConsumNewInstanceRequests();
+
                 consumer.Received += async (model, ea) =>
                 {
                     Request = GetRequest(ea);
+                    MessageServiceTulpe = new Tuple<RabbitMQ.Client.IModel, RabbitMQ.Client.Events.BasicDeliverEventArgs>(channel, ea);
                     ulong GuildId = Request.GuildId;
                     Server server = GetServer(GuildId);
-                    if (server != null)
+                    if (server == null)
                     {
                         var session = _hostingService.CreateServer(GuildId);
                         var serverAddress = await session.CreateSessionAsync(GuildId);
 
-                        await SendMessageToContextChannel("Server is running on: " + serverAddress);
-
-                        await EndRoutine(ea, channel);
-
+                        resultMessage = "Server is running on: " + serverAddress;
+                        await EndRoutine();
                     }
                     else
                     {
-                        await SendMessageToContextChannel("You can only run one session");
-                        await EndRoutine(ea, channel);
+                        resultMessage = "You can only run one session";
+                        await EndRoutine();
                     }
                 };
             }
@@ -75,21 +68,28 @@ namespace Ratelimited.GameSession.MessageBroker
             return _hostingService.Servers.Find(s => s.GuildId == guildId);
         }
 
-        private async Task EndRoutine(BasicDeliverEventArgs ea, RabbitMQ.Client.IModel channel)
+        private async Task EndRoutine()
         {
-            await RemoveContextMessages();
-            channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+            await InitDiscordClient();
         }
 
-        private Task SetReady()
+        private void CheckoutToChannel(RabbitMQ.Client.IModel channel, RabbitMQ.Client.Events.BasicDeliverEventArgs ea)
         {
-            IsDiscordReady = true;
-            return Task.Delay(0);
+            channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+            Console.WriteLine("DONE");
+        }
+
+        private async Task OnReady()
+        {
+            await RemoveContextMessages();
+            await SendMessageToContextChannel(resultMessage);
+            CheckoutToChannel(MessageServiceTulpe.Item1, MessageServiceTulpe.Item2);
         }
 
         private async Task InitDiscordClient()
         {
             _discordClient.Log += LogAsync;
+            _discordClient.Ready += OnReady;
             await _discordClient.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TOKEN"));
             await _discordClient.StartAsync();
         }
@@ -115,7 +115,7 @@ namespace Ratelimited.GameSession.MessageBroker
             return guild.GetTextChannel(discordChannel);
         }
 
-        private CreateNewInstanceRequest GetRequest(BasicDeliverEventArgs ea)
+        private CreateNewInstanceRequest GetRequest(RabbitMQ.Client.Events.BasicDeliverEventArgs ea)
         {
             var body = ea.Body;
             var message = Encoding.UTF8.GetString(body);

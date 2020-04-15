@@ -15,4 +15,8 @@ game server installer => linuxgsm
         - "/gs end {id}", end the minecraft server
 ### Database
     collection:
-        - discord[id=matches guild id, session=[ip,port]]
+        - discord[id=matches guild id, session=[ip,port]
+
+### Important
+    ssh-keygen -t rsa -b 2048 -m pem -f ~/.ssh/key -C username
+    for the ssh key

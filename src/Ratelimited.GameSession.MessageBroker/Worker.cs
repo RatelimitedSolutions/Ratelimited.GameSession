@@ -92,7 +92,6 @@ namespace Ratelimited.GameSession.MessageBroker
             _discordClient.Log += LogAsync;
             await _discordClient.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TOKEN"));
             await _discordClient.StartAsync();
-            _discordClient.LoggedIn += LoggedIn;
         }
 
         private async Task SendMessageToContextChannel(string message)

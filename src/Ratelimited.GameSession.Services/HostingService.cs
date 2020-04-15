@@ -21,7 +21,7 @@ namespace Ratelimited.GameSession.Services
             ApiKey = apiKey;
         }
 
-        public Server CreateServer(string guildId)
+        public Server CreateServer(ulong guildId)
         {
             var newServer = new Server(guildId,ApiKey);
             Servers.Add(newServer);
@@ -32,24 +32,24 @@ namespace Ratelimited.GameSession.Services
     public class Server
     {
         public string Adress { get; set; }
-        public string GuildId { get; set; }
+        public ulong GuildId { get; set; }
         private long ServerId { get; set; }
         private HttpClient httpClient;
 
-        public Server(string guildId,string apiKey)
+        public Server(ulong guildId,string apiKey)
         {
             GuildId = guildId;
 
             httpClient = InitHttpClient(apiKey);
         }
 
-        public async Task<string> CreateSessionAsync(string guildId)
+        public async Task<string> CreateSessionAsync(ulong guildId)
         {
-            //var dropletResponse = await CreateDropletAsync(guildId);
-            //ServerId = dropletResponse.Droplet.Id;
+            var dropletResponse = await CreateDropletAsync(guildId);
+            ServerId = dropletResponse.Droplet.Id;
 
-            var result = await GetDroplet(188591775);
-            ServerId = result.Droplet.Id;
+            //var result = await GetDroplet(188591775);
+            //ServerId = result.Droplet.Id;
 
             await WaitForSetupAsync();
 
@@ -141,12 +141,12 @@ namespace Ratelimited.GameSession.Services
             return httpClient;
         }
 
-        private async Task<CreateNewDroplet> CreateDropletAsync(string guildId)
+        private async Task<CreateNewDroplet> CreateDropletAsync(ulong guildId)
         {
             List<long> sshKeys = await getSshKeysAsync();
             var content = new CreateDropletContent
             {
-                Name = $"{guildId}",
+                Name = $"{guildId.ToString()}",
                 Region = "fra1",
                 Size = "s-1vcpu-1gb",
                 Image = "ubuntu-18-04-x64",

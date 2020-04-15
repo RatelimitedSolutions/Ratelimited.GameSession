@@ -50,26 +50,35 @@ namespace Ratelimited.GameSession.MessageBroker
                 {
                     Request = GetRequest(ea);
                     ulong GuildId = Request.GuildId;
-
-                    Server server = _hostingService.Servers.Find(s => s.GuildId == Request.GuildId.ToString());
-                    if (server == null)
+                    Server server = GetServer(GuildId);
+                    if (server != null)
                     {
-                        await SendMessageToContextChannel("You can only run one session");
-                        await RemoveContextMessages();
-                        channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+                        var session = _hostingService.CreateServer(GuildId);
+                        var serverAddress = await session.CreateSessionAsync(GuildId);
+
+                        await SendMessageToContextChannel("Server is running on: " + serverAddress);
+
+                        await EndRoutine(ea, channel);
+
                     }
                     else
                     {
-                    var session = _hostingService.CreateServer(GuildId.ToString());
-                    var serverAddress = await session.CreateSessionAsync(GuildId.ToString());
-
-                    await SendMessageToContextChannel("Server is running on: " + serverAddress);
-
-                    await RemoveContextMessages();
-                    channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+                        await SendMessageToContextChannel("You can only run one session");
+                        await EndRoutine(ea, channel);
                     }
                 };
             }
+        }
+
+        private Server GetServer(ulong guildId)
+        {
+            return _hostingService.Servers.Find(s => s.GuildId == guildId);
+        }
+
+        private async Task EndRoutine(BasicDeliverEventArgs ea, RabbitMQ.Client.IModel channel)
+        {
+            await RemoveContextMessages();
+            channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
         }
 
         private Task SetReady()

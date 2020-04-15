@@ -43,7 +43,7 @@ namespace Ratelimited.GameSession.MessageBroker
             while (!stoppingToken.IsCancellationRequested)
             {
                 if (IsDiscordReady == false)
-                    break;
+                    continue;
 
                 var (channel, consumer) = _messageService.ConsumNewInstanceRequests();
                 consumer.Received += async (model, ea) =>
@@ -57,9 +57,9 @@ namespace Ratelimited.GameSession.MessageBroker
                         await SendMessageToContextChannel("You can only run one session");
                         await RemoveContextMessages();
                         channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
-                        return;
                     }
-
+                    else
+                    {
                     var session = _hostingService.CreateServer(GuildId.ToString());
                     var serverAddress = await session.CreateSessionAsync(GuildId.ToString());
 
@@ -67,16 +67,15 @@ namespace Ratelimited.GameSession.MessageBroker
 
                     await RemoveContextMessages();
                     channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+                    }
                 };
-
             }
-            await Task.Delay(-1);
         }
 
         private Task SetReady()
         {
             IsDiscordReady = true;
-            return Task.Delay(5);
+            return Task.Delay(0);
         }
 
         private async Task InitDiscordClient()

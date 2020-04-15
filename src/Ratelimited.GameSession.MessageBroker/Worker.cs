@@ -126,13 +126,6 @@ namespace Ratelimited.GameSession.MessageBroker
             return request;
         }
 
-        private Task LoggedIn()
-        {
-            _logger.LogInformation("Loggekjjid in", DateTimeOffset.Now);
-            return Task.CompletedTask;
-
-        }
-
         private Task LogAsync(LogMessage log)
         {
             _logger.LogInformation(log.Message, DateTimeOffset.Now);

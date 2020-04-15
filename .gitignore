@@ -501,4 +501,4 @@ healthchecksdb
 MigrationBackup/
 
 # End of https://www.gitignore.io/api/code,dotnetcore,aspnetcore,visualstudio,visualstudiocode
-*/launchSettings.json
+**launchSettings.json**

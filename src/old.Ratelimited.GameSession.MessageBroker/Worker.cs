@@ -39,7 +39,6 @@ namespace Ratelimited.GameSession.MessageBroker
             while (!stoppingToken.IsCancellationRequested)
             {
                 var (channel, consumer) = _messageService.ConsumNewInstanceRequests();
-
                 consumer.Received += async (model, ea) =>
                 {
                     Request = GetRequest(ea);

@@ -158,11 +158,11 @@ namespace Ratelimited.GameSession.Services
 
         private async Task WaitForSetupAsync()
         {
-            await Task.Delay(60000);
+            await Task.Delay(15000);
             var updatedDroplet = await GetDroplet(ServerId);
             while (updatedDroplet.Droplet.Networks.V4.Count == 0)
             {
-                await Task.Delay(3000);
+                await Task.Delay(25000);
                 updatedDroplet = await GetDroplet(ServerId);
             }
             Adress = updatedDroplet.Droplet.Networks.V4[0].IpAddress;

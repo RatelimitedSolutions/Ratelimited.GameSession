@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Ratelimited.GameSession.UI.Controllers
 {
     [ApiController]
-    [Route("Auths")]
+    [Route("Auth")]
     public class AuthController: ControllerBase
     {
         private readonly IAuthService _authService;
@@ -23,6 +23,7 @@ namespace Ratelimited.GameSession.UI.Controllers
         }
 
         [AllowAnonymous]
+        [Route("signin")]
         [HttpPost]
         public Task<IActionResult> SignInAsync(SignInModel model)
         {

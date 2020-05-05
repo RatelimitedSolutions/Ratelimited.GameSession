@@ -1,7 +1,9 @@
 ﻿using DotNetCore.AspNetCore;
 using DotNetCore.Objects;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ratelimited.GameSession.Application;
+using Ratelimited.GameSession.Domain;
 using Ratelimited.GameSession.Model;
 using System;
 using System.Collections.Generic;

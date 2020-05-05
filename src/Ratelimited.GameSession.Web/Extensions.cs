@@ -12,6 +12,7 @@ using Ratelimited.GameSession.Application;
 using VueCliMiddleware;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using NETCore.MailKit.Extensions;
 
 namespace Ratelimited.GameSession.Web
 {
@@ -35,6 +36,7 @@ namespace Ratelimited.GameSession.Web
             services.AddFileExtensionContentTypeProvider();
             services.AddClassesInterfaces(typeof(IUserService).Assembly);
             services.AddClassesInterfaces(typeof(IUnitOfWork).Assembly);
+            services.AddClassesInterfaces(typeof(IEmailService).Assembly);
         }
 
         public static void AddSpa(this IServiceCollection services)

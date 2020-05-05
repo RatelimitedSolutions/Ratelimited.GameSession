@@ -13,9 +13,9 @@ namespace Ratelimited.GameSession.Application
 {
     public sealed class AuthService : IAuthService
     {
-        private IAuthRepository _authRepository;
-        private IHashService _hashService;
-        private IJsonWebTokenService _jsonWebTokenService;
+        private readonly IAuthRepository _authRepository;
+        private readonly IHashService _hashService;
+        private readonly IJsonWebTokenService _jsonWebTokenService;
 
         public AuthService
         (

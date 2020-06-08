@@ -20,3 +20,6 @@ game server installer => linuxgsm
 ### Important
     ssh-keygen -t rsa -b 2048 -m pem -f ~/.ssh/key -C username
     for the ssh key
+
+[![forthebadge](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/fuck-it-ship-it.svg)](https://forthebadge.com)
